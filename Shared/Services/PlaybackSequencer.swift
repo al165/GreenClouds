@@ -16,6 +16,9 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     @Published private(set) var duration: TimeInterval = 0
     /// Non-nil while the "Sending voice message…" status is showing for this step.
     @Published private(set) var preparingStep: ScriptStep?
+    /// True once the last script step's postDelay has elapsed with nothing left to
+    /// advance to — the performance is over, shown as the contact going "offline".
+    @Published private(set) var isFinished = false
 
     /// Independent playback state for replaying an already-completed voice message —
     /// kept separate from the live step above so re-listening to an old message never
@@ -46,6 +49,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     func start() {
         guard !isRunning else { return }
         isRunning = true
+        isFinished = false
         currentIndex = 0
         loadCurrentStep()
     }
@@ -53,6 +57,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     func reset() {
         isRunning = false
         isPaused = false
+        isFinished = false
         pendingAdvance?.cancel()
         pendingAdvance = nil
         pendingSend?.cancel()
@@ -169,6 +174,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
 
     private func prepareNextStep() {
         guard isRunning, currentIndex < Script.steps.count else {
+            if isRunning { isFinished = true }
             isRunning = false
             return
         }
@@ -187,6 +193,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
 
     private func loadCurrentStep() {
         guard isRunning, currentIndex < Script.steps.count else {
+            if isRunning { isFinished = true }
             isRunning = false
             return
         }

@@ -23,7 +23,7 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 // Set avatarImageName to an Assets.xcassets image name (same convention as
                 // LockScreenBackground/photo_01) to show a photo instead of the placeholder icon.
-                ChatHeaderView(activityText: sequencer.preparingStep?.kind.activityText, avatarImageName: "Avatar")
+                ChatHeaderView(activityText: sequencer.preparingStep?.kind.activityText, isFinished: sequencer.isFinished, avatarImageName: "Avatar")
                     .ignoresSafeArea(edges: .top)
 
                 ScrollViewReader { proxy in

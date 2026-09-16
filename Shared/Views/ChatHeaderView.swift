@@ -5,6 +5,9 @@ import SwiftUI
 struct ChatHeaderView: View {
     /// Non-nil while a step is being "sent" — replaces "online" with e.g. "typing…", in blue.
     var activityText: String?
+    /// True once the scripted sequence has fully played out — shows "offline" instead
+    /// of "online" to signal the performance has ended.
+    var isFinished: Bool = false
     /// Optional Assets.xcassets image name; falls back to a placeholder icon when nil.
     var avatarImageName: String? = nil
 
@@ -18,7 +21,7 @@ struct ChatHeaderView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Green Clouds")
                     .font(.system(size: 17, weight: .semibold))
-                Text(activityText ?? "online")
+                Text(activityText ?? (isFinished ? "offline" : "online"))
                     .foregroundColor(activityText != nil ? .blue : .black.opacity(0.8))
                     .font(.caption2)
             }
