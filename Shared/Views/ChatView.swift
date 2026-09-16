@@ -1,12 +1,16 @@
 import SwiftUI
 
-/// The chat screen, shown once the audience member taps the lock-screen notification.
-/// No navigation back to the lock screen from here — that only happens when the phone
-/// is put down, which RootView handles by resetting the sequencer/timeline and
-/// unmounting this view (its own compose-bar state resets for free when that happens).
+/// The chat screen itself — shared by every app in this project. A caller (GC
+/// Installation's RootView, GC Performance's own root) owns the sequencer/timeline
+/// and decides how/when the chat is shown; this view has no opinion on that.
 struct ChatView: View {
     @ObservedObject var sequencer: PlaybackSequencer
     @Binding var timeline: [ChatItem]
+    /// Called before a typed message is handled, with the trimmed text. Return true
+    /// to indicate it's been fully handled (e.g. a command like "reset") so the
+    /// default "append as a sent bubble" behavior is skipped. Nil (the default)
+    /// means every send just appends a bubble, as in GC Installation.
+    var onBeforeSend: ((String) -> Bool)? = nil
 
     @State private var composeText = ""
     @FocusState private var isComposeFocused: Bool
@@ -95,9 +99,12 @@ struct ChatView: View {
     private func sendMessage() {
         let trimmed = composeText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        timeline.append(.sent(SentMessage(text: trimmed)))
         composeText = ""
         isComposeFocused = false
+
+        if onBeforeSend?(trimmed) == true { return }
+
+        timeline.append(.sent(SentMessage(text: trimmed)))
         SoundEffectPlayer.shared.play(.messageSent)
     }
 }

@@ -26,7 +26,21 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: GCInstallation/Info.plist
 
-  # When GC Performance is ready, add a second target here following the same
-  # pattern: `sources: [Shared, GCPerformance]`, its own PRODUCT_NAME/bundle id/
-  # INFOPLIST_FILE, and a GCPerformance/ folder (App entry point, Info.plist,
-  # Assets.xcassets, Resources/Audio, Models/Script.swift) mirroring GCInstallation/.
+  GCPerformance:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: GCPerformance
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_NAME: "GC Performance"
+        PRODUCT_BUNDLE_IDENTIFIER: com.niritpaled.GCPerformance
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: GCPerformance/Info.plist

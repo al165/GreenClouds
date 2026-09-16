@@ -6,19 +6,23 @@ sequence of voice messages. The sequence starts when the phone is picked up
 `/home/arran/.claude/plans/i-want-to-build-velvety-crown.md` for the full design
 plan.
 
-This repo is a single XcodeGen project (`project.yml`) that can hold multiple
-apps for the Green Clouds project as separate targets, sharing most of their code:
+This repo is a single XcodeGen project (`project.yml`) holding two apps as
+separate targets, sharing most of their code:
 
-- **GC Installation** (`GCInstallation/`) — the app documented below, built first.
-- **GC Performance** (`GCPerformance/`) — a planned second app for a separate task,
-  mostly the same features. Not built yet; see the comment in `project.yml` and
-  "Project layout" below for how it slots in once it exists.
+- **GC Installation** (`GCInstallation/`) — a lock-screen prop: starts its scripted
+  message sequence when the phone is picked up, resets when it's put back down.
+  See "GC Installation: lock screen flow" below.
+- **GC Performance** (`GCPerformance/`) — just the chat screen, no lock screen: it's
+  the performer's own control surface. Sending any message starts the scripted
+  sequence; sending exactly "reset" clears the chat and sequencer back to the
+  start. See "GC Performance" below.
 
-Code used by both apps lives in `Shared/` — Views, Services, and the `ScriptStep`
-model. Each app has its own folder for what's actually specific to it: the app
-entry point, `Info.plist`, `Assets.xcassets`, `Resources/Audio`, and its own
-`Models/Script.swift` (the actual message content/sequence for that
-app/performance).
+Code used by both apps lives in `Shared/` — the chat screen itself and its bubbles,
+the playback sequencer, sound effects, and the `ScriptStep`/`ChatItem` models. Code
+specific to only one app (GC Installation's lock screen/motion detection, each
+app's own root view) lives in that app's own folder, alongside its `Info.plist`,
+`Assets.xcassets`, `Resources/Audio`, and `Models/Script.swift` (the actual message
+content/sequence for that app).
 
 ## Media files are not tracked in git
 
@@ -30,17 +34,19 @@ folder structure and Xcode configuration survive a clone, but the actual voice
 recordings and photos do not.
 
 This means a fresh clone builds but is missing all real media — you'll need to
-supply it locally on each machine, per app:
+supply it locally on each machine, per app (`GCInstallation/` and/or
+`GCPerformance/`):
 
-- **Voice messages**: drop `.m4a` files into `GCInstallation/Resources/Audio/`
-  (see "Replacing the placeholder audio" below).
+- **Voice messages**: drop `.m4a` files into `<App>/Resources/Audio/` (see
+  "Replacing the placeholder audio" below).
 - **Notification/UI sounds**: `alert.mp3`, `message_received.wav`,
-  `message_sent.wav` also go in `GCInstallation/Resources/Audio/`.
-- **Images**: the app icon (`GCInstallation/Assets.xcassets/AppIcon.appiconset/`),
-  lock-screen background (`LockScreenBackground.imageset/`), avatar
-  (`Avatar.imageset/`), and any photo message assets (`photo_01.imageset/`,
-  etc.) each need their image file placed alongside the existing
-  `Contents.json` in that imageset folder.
+  `message_sent.wav` also go in `<App>/Resources/Audio/` — both apps need their
+  own copies.
+- **Images**: the app icon (`<App>/Assets.xcassets/AppIcon.appiconset/`), avatar
+  (`Avatar.imageset/`), and — for GC Installation only — the lock-screen
+  background (`LockScreenBackground.imageset/`) and any photo message assets
+  (`photo_01.imageset/`, etc.) each need their image file placed alongside the
+  existing `Contents.json` in that imageset folder.
 
 Run `xcodegen generate` after adding files so Xcode picks them up.
 
@@ -107,18 +113,26 @@ Xcode should launch with the project open, showing the file tree on the left.
   and sign in with your regular Apple ID (a free account is fine — no paid
   membership needed yet).
 
-### 7. Set the signing team on the app target
+### 7. Set the signing team on each app target
+
+There are two targets — **GCInstallation** and **GCPerformance** (the apps
+themselves are named "GC Installation"/"GC Performance"; Xcode target/scheme
+names have no space) — and signing is set per target, so repeat this for both:
 
 - In the left sidebar (**Project Navigator**), click the blue project icon at the
   very top named **GreenClouds**.
-- In the main editor area, under **TARGETS**, select **GCInstallation** (the app
-  itself is named "GC Installation"; the Xcode target/scheme has no space).
+- In the main editor area, under **TARGETS**, select **GCInstallation**.
 - Click the **Signing & Capabilities** tab.
 - Make sure **Automatically manage signing** is checked.
 - Under **Team**, choose your Apple ID (it'll show as something like
   _"Your Name (Personal Team)"_).
 - Xcode will generate a provisioning profile automatically — if you see a red
   error here, click **Try Again**; it's usually transient the first time.
+- Repeat the above for the **GCPerformance** target.
+
+The device dropdown/run button in step 10 builds whichever scheme is selected in
+Xcode's toolbar (next to the device picker) — switch it between "GCInstallation"
+and "GCPerformance" depending on which app you want to build and run.
 
 ### 8. Connect and trust your iPhone
 
@@ -158,40 +172,44 @@ actual iPhone from the list — it should appear once trusted.
 
 ## Replacing the placeholder audio
 
-`GCInstallation/Resources/Audio/message_01.m4a`, `message_02.m4a`, `message_03.m4a`
-are currently **silent placeholders** (3–5s each) generated with ffmpeg, just so
-the project builds and the sequence/UI can be tested end-to-end before real
-recordings exist.
+`GCInstallation/Resources/Audio/message_01.m4a`/`message_02.m4a`/`message_03.m4a`
+and `GCPerformance/Resources/Audio/message_01.m4a`/`message_02.m4a` are currently
+**silent placeholders** generated with ffmpeg, just so each project builds and the
+sequence/UI can be tested end-to-end before real recordings exist.
 
-To use real voice messages:
+To use real voice messages, for either app:
 
-1. Drop your `.m4a` recordings into `GCInstallation/Resources/Audio/`, named to
-   match (or update the names in `GCInstallation/Models/Script.swift`).
-2. Edit `GCInstallation/Models/Script.swift` to add/remove/reorder steps, set
-   which side each bubble appears on (`isFromContact`), and the pause after each
-   message (`postDelay`).
+1. Drop your `.m4a` recordings into `<App>/Resources/Audio/`, named to match (or
+   update the names in `<App>/Models/Script.swift`).
+2. Edit `<App>/Models/Script.swift` to add/remove/reorder steps, set which side
+   each bubble appears on (`isFromContact`), and the pause after each message
+   (`postDelay`).
 3. Re-run `xcodegen generate` if you added new files (XcodeGen needs to re-scan
    the folder), then rebuild.
 
 ## Replacing the placeholder app icon
 
-`GCInstallation/Assets.xcassets/AppIcon.appiconset/icon-1024.png` is currently
-just a solid WhatsApp-teal square, added only to satisfy Xcode's build (it
-errors if `AppIcon` has no image at all). Replace `icon-1024.png` with a real
-1024×1024 PNG (no transparency) before the actual performance — Xcode's
-single-size icon format will scale it to every size automatically.
+`GCInstallation/Assets.xcassets/AppIcon.appiconset/icon-1024.png` (solid
+WhatsApp-teal) and `GCPerformance/Assets.xcassets/AppIcon.appiconset/icon-1024.png`
+(solid indigo) are placeholders, added only to satisfy Xcode's build (it errors
+if `AppIcon` has no image at all). Replace `icon-1024.png` with a real 1024×1024
+PNG (no transparency) before the actual performance/run — Xcode's single-size
+icon format will scale it to every size automatically. Same goes for each app's
+placeholder `Avatar.imageset/avatar.jpg` (currently a solid-color square).
 
 ## Calibrating the pickup/put-down gesture
 
-Core Motion can't be tested in the Simulator — this must be done on a real device.
+GC Installation only — GC Performance has no motion detection, it starts on the
+performer's first message instead. Core Motion can't be tested in the Simulator,
+so this must be done on a real device.
 
 1. Temporarily change the root view in `GCInstallation/GCInstallationApp.swift`
    from `RootView()` to `CalibrationView()`.
 2. Run on your phone and watch the live `gravity.z` value while setting the phone
    flat on a table vs picking it up in your hand at different angles/speeds.
 3. Adjust `pickedUpThreshold`, `flatThreshold`, and `requiredStableDuration` in
-   `Shared/Services/MotionManager.swift` until the FLAT/PICKED UP indicator feels
-   reliable and doesn't flicker.
+   `GCInstallation/Services/MotionManager.swift` until the FLAT/PICKED UP
+   indicator feels reliable and doesn't flicker.
 4. Change the root view back to `RootView()`.
 
 ## Scaling to the full run (5 phones, 2 weeks)
@@ -213,50 +231,61 @@ Once the app is feature-complete and calibrated:
 ## Project layout
 
 ```
-project.yml                  # XcodeGen config — defines the GCInstallation target
-                              # (and, later, a GCPerformance target alongside it)
+project.yml                   # XcodeGen config — defines both app targets
 
-Shared/                      # Compiled into every app target — code, not content
-  AppDelegate.swift           # Idle timer disable + portrait lock
+Shared/                       # Compiled into every app target
+  AppDelegate.swift            # Idle timer disable + portrait lock
   Models/
-    ScriptStep.swift          # ScriptStep/ScriptStepKind types (the data using them
-                               # lives per-app in <App>/Models/Script.swift)
-    ChatItem.swift             # Unifies script bubbles + user-sent bubbles into one timeline
+    ScriptStep.swift           # ScriptStep/ScriptStepKind types (the data using them
+                                # lives per-app in <App>/Models/Script.swift)
+    ChatItem.swift              # Unifies script bubbles + user-sent bubbles into one timeline
   Views/
-    RootView.swift             # App root — switches between lock screen and chat
-    LockScreenView.swift       # Fake lock screen: clock, background, notification banner
-    ChatView.swift              # Chat screen, shown after tapping the notification
+    ChatView.swift               # The chat screen itself — used by both apps' root views
     ChatHeaderView.swift
-    MessageBubble.swift         # Text bubble (script text steps and user-sent messages)
-    ImageMessageBubble.swift    # Photo bubble (script image steps)
-    VoiceMessageBubble.swift    # WhatsApp-style voice note bubble, tappable, shows progress
-    ComposeBar.swift            # Bottom text input for typing/sending a message
-    CalibrationView.swift       # Throwaway motion-sensor calibration harness
-    DebugTriggerOverlay.swift   # Dev-only manual triggers for testing the sequence
+    MessageBubble.swift           # Text bubble (script text steps and user-sent messages)
+    ImageMessageBubble.swift      # Photo bubble (script image steps)
+    FullScreenImageView.swift     # Full-screen photo viewer (tap a photo bubble)
+    VoiceMessageBubble.swift      # WhatsApp-style voice note bubble, tappable, shows progress
+    ComposeBar.swift              # Bottom text input for typing/sending a message
   Services/
-    MotionManager.swift         # Pickup/put-down detection (Core Motion)
-    PlaybackSequencer.swift     # Drives the script, one step at a time
-    SoundEffectPlayer.swift     # Sent/received/lock-screen alert sound + vibration
+    PlaybackSequencer.swift       # Drives the script, one step at a time
+    SoundEffectPlayer.swift       # Sent/received/lock-screen alert sound + vibration
 
-GCInstallation/               # Everything specific to the GC Installation app
-  GCInstallationApp.swift      # App entry point (@main)
+GCInstallation/                # Everything specific to the GC Installation app
+  GCInstallationApp.swift       # App entry point (@main)
   Info.plist
   Models/
-    Script.swift               # The actual message sequence for this app/performance
-  Resources/Audio/              # Voice message + notification sound files
+    Script.swift                 # The actual message sequence for this app
+  Views/
+    RootView.swift                # App root — switches between lock screen and ChatView
+    LockScreenView.swift          # Fake lock screen: clock, background, notification banner
+    CalibrationView.swift         # Throwaway motion-sensor calibration harness
+    DebugTriggerOverlay.swift     # Dev-only manual pickup/put-down triggers (simulator only)
+  Services/
+    MotionManager.swift           # Pickup/put-down detection (Core Motion)
+  Resources/Audio/                # Voice message + notification sound files
   Assets.xcassets/
-    AppIcon.appiconset/          # App icon
+    AppIcon.appiconset/            # App icon
     LockScreenBackground.imageset/ # Lock screen background photo
-    Avatar.imageset/             # Chat header avatar
-    photo_01.imageset/           # Example photo-message asset
+    Avatar.imageset/               # Chat header avatar
+    photo_01.imageset/             # Example photo-message asset
 
-GCPerformance/                # Planned second app — not built yet. Mirrors
-                               # GCInstallation/'s layout above once it exists.
+GCPerformance/                 # Everything specific to the GC Performance app
+  GCPerformanceApp.swift        # App entry point (@main)
+  Info.plist
+  Models/
+    Script.swift                 # The actual message sequence for this app
+  Views/
+    PerformanceRootView.swift     # App root — shows ChatView directly, no lock screen
+  Resources/Audio/                # Voice message + notification sound files
+  Assets.xcassets/
+    AppIcon.appiconset/            # App icon
+    Avatar.imageset/               # Chat header avatar
 ```
 
-### Lock screen flow
+## GC Installation: lock screen flow
 
-`RootView` is now the app's actual root and owns both `MotionManager` and
+`RootView` is GC Installation's actual root and owns both `MotionManager` and
 `PlaybackSequencer`, switching between `LockScreenView` and `ChatView`:
 
 1. Phone flat → plain lock screen (clock + background, no notification).
@@ -275,28 +304,56 @@ Replace the image in `GCInstallation/Assets.xcassets/LockScreenBackground.images
 with a real personalized photo before the performance — it's currently just a
 generated placeholder gradient.
 
-### Behavior notes
+Putting the phone down doesn't reset instantly — there's a ~2.5s grace period
+(`putDownResetDelay` in `RootView.swift`) so a brief adjustment of grip doesn't
+restart the whole piece. If it's picked back up within that window, nothing
+resets and playback continues where it left off.
 
-- Each step (other than the very first) shows a pulsing **"Sending voice
-  message…"** status (`sendingDuration` in `PlaybackSequencer.swift`, default
-  2s) before the actual bubble appears.
-- Voice messages **do not autoplay** — the bubble appears paused/ready, and the
-  audience member must tap the play circle to start it. Tapping again
-  pauses/resumes. Only the **currently loaded** step is tappable; earlier,
-  already-finished bubbles are static. The waveform fills left-to-right to show
-  playback progress.
+The compose bar at the bottom lets the audience member type and send their own
+message, which appears as a bubble on the right (like a normal outgoing
+message). In this app it's purely cosmetic — it doesn't affect the script — and
+clears on reset (along with everything else in the chat) since `ChatView`
+unmounts entirely when returning to the lock screen.
+
+## GC Performance
+
+`PerformanceRootView` is GC Performance's root — it shows `ChatView` directly,
+with no lock screen, since this app is the performer's own control surface
+rather than a prop pretending to be a stranger's phone:
+
+1. The chat is empty and idle on launch. The performer types and sends a
+   message (the compose bar is a real input here, not cosmetic) — whatever they
+   type, it just needs to be sent.
+2. That first send calls `sequencer.start()`, and the scripted sequence begins
+   revealing bubbles from `GCPerformance/Models/Script.swift`, exactly as
+   described in "Chat behavior" below (tap-to-play voice notes, etc).
+3. Sending the exact message **"reset"** (case-insensitive) at any point clears
+   the whole chat and resets the sequencer back to the start, instead of being
+   added as a bubble — ready for the performer to send a fresh first message
+   and start again.
+
+This interception happens in `PerformanceRootView.handleSend` via `ChatView`'s
+`onBeforeSend` hook — GC Installation doesn't pass one, so its compose bar keeps
+the default cosmetic behavior described above.
+
+## Chat behavior (both apps)
+
+- Each step (other than the very first, for GC Installation) shows a pulsing
+  **"Sending voice message…"** status (`sendingDuration` in
+  `PlaybackSequencer.swift`, default 2s) before the actual bubble appears.
+- Voice messages **do not autoplay** — the bubble appears paused/ready, and
+  someone must tap the play circle to start it. Tapping again pauses/resumes.
+  Once a voice message has finished playing, tapping it again replays it from
+  the start, independent of the sequence itself. The waveform fills
+  left-to-right to show playback progress.
 - The sequence only advances to the next step once the current one has actually
-  been **played through to the end** (plus its `postDelay`) — if the audience
-  member never presses play, it just waits there.
-- Putting the phone down doesn't reset instantly — there's a ~2.5s grace period
-  (`putDownResetDelay` in `RootView.swift`) so a brief adjustment of grip doesn't
-  restart the whole piece. If it's picked back up within that window, nothing
-  resets and playback continues where it left off.
-- The compose bar at the bottom lets the audience member type and send their own
-  message, which appears as a bubble on the right (like a normal outgoing
-  message). It's purely cosmetic — it doesn't affect the script — and clears on
-  reset (along with everything else in the chat) since `ChatView` unmounts
-  entirely when returning to the lock screen.
+  been **played through to the end** (plus its `postDelay`) — if nobody presses
+  play, it just waits there.
+- Tapping a photo message bubble shows it full-screen with its caption below;
+  a back button in the top-left returns to the chat.
+- Once the last script step's `postDelay` elapses with nothing left to advance
+  to, the contact's status in the header switches from "online" to "offline" —
+  the visible sign that the sequence (and the performance) has ended.
 
 ## Note on WhatsApp branding
 
