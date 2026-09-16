@@ -14,50 +14,58 @@ struct ComposeBar: View {
     @State private var isCanceling = false
 
     private let cancelThreshold: CGFloat = -80
+    private let accentColor = Color(red: 0.11, green: 0.67, blue: 0.38)
+    private let buttonDiameter: CGFloat = 48
 
     private var isEmpty: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            if recorder.isRecording {
-                recordingIndicator
-            } else {
-                TextField("Message", text: $text, axis: .vertical)
-                    .lineLimit(1...4)
-                    .focused(isFocused)
-                    .submitLabel(.send)
-                    .onSubmit(onSend)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-            }
-
-            if isEmpty {
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(micColor)
-                    .frame(width: 30, height: 30)
-                    .offset(x: min(0, dragTranslation.width))
-                    .gesture(recordingGesture)
-            } else {
-                Button(action: onSend) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(Color(red: 0.11, green: 0.67, blue: 0.38))
+        HStack(spacing: 10) {
+            Group {
+                if recorder.isRecording {
+                    recordingIndicator
+                } else {
+                    TextField("Message", text: $text, axis: .vertical)
+                        .lineLimit(1...4)
+                        .focused(isFocused)
+                        .submitLabel(.send)
+                        .onSubmit(onSend)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
                 }
             }
+            .background(Color(.systemBackground))
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+
+            actionButton
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Color(.systemBackground))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
     }
 
-    private var micColor: Color {
-        guard recorder.isRecording else { return .gray }
-        return isCanceling ? .red : Color(red: 0.11, green: 0.67, blue: 0.38)
+    @ViewBuilder
+    private var actionButton: some View {
+        if isEmpty {
+            Image(systemName: "mic.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: buttonDiameter, height: buttonDiameter)
+                .background(Circle().fill(recorder.isRecording && isCanceling ? .red : accentColor))
+                .offset(x: min(0, dragTranslation.width))
+                .gesture(recordingGesture)
+        } else {
+            Button(action: onSend) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: buttonDiameter, height: buttonDiameter)
+                    .background(Circle().fill(accentColor))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var recordingIndicator: some View {
@@ -86,10 +94,8 @@ struct ComposeBar: View {
                 .foregroundColor(.secondary)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     private var elapsedString: String {
