@@ -11,6 +11,11 @@ struct ChatView: View {
     /// default "append as a sent bubble" behavior is skipped. Nil (the default)
     /// means every send just appends a bubble, as in GC Installation.
     var onBeforeSend: ((String) -> Bool)? = nil
+    /// Called after a message has been appended as a sent bubble (i.e. `onBeforeSend`
+    /// didn't intercept it) — for side effects that must happen only once the bubble
+    /// is actually in the timeline, like GC Performance starting the sequence on the
+    /// first send (so the scripted reply appears after it, not before).
+    var onDidSend: ((String) -> Void)? = nil
 
     @State private var composeText = ""
     @FocusState private var isComposeFocused: Bool
@@ -106,5 +111,6 @@ struct ChatView: View {
 
         timeline.append(.sent(SentMessage(text: trimmed)))
         SoundEffectPlayer.shared.play(.messageSent)
+        onDidSend?(trimmed)
     }
 }

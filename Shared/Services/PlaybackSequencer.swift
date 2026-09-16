@@ -44,14 +44,21 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     /// How long the "Sending voice message…" status shows before the bubble appears.
     private let sendingDuration: TimeInterval = 2.0
 
-    /// Starts the sequence. The first message skips the "sending" phase and appears
-    /// immediately — the lock-screen notification already represented it arriving.
-    func start() {
+    /// Starts the sequence. By default the first step skips the "sending" phase and
+    /// appears immediately — appropriate for GC Installation, where the lock-screen
+    /// notification already represented it arriving. Pass `skipFirstSendingPhase:
+    /// false` (GC Performance, started by the performer's own first sent message) to
+    /// have the first step go through the normal "sending…" status like every other.
+    func start(skipFirstSendingPhase: Bool = true) {
         guard !isRunning else { return }
         isRunning = true
         isFinished = false
         currentIndex = 0
-        loadCurrentStep()
+        if skipFirstSendingPhase {
+            loadCurrentStep()
+        } else {
+            prepareNextStep()
+        }
     }
 
     func reset() {

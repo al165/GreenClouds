@@ -15,7 +15,7 @@ struct PerformanceRootView: View {
     private let resetCommand = "reset"
 
     var body: some View {
-        ChatView(sequencer: sequencer, timeline: $timeline, onBeforeSend: handleSend)
+        ChatView(sequencer: sequencer, timeline: $timeline, onBeforeSend: handleBeforeSend, onDidSend: handleDidSend)
             .onAppear {
                 sequencer.onStepRevealed = { step, duration in
                     timeline.append(.script(RevealedScriptStep(step: step, duration: duration)))
@@ -24,20 +24,22 @@ struct PerformanceRootView: View {
             }
     }
 
-    /// Returns true if the message was fully handled here (a command), so ChatView
-    /// shouldn't also append it as a normal outgoing bubble.
-    private func handleSend(_ text: String) -> Bool {
-        guard text.caseInsensitiveCompare(resetCommand) != .orderedSame else {
-            sequencer.reset()
-            timeline = []
-            hasStarted = false
-            return true
-        }
+    /// Returns true if the message was fully handled here (the "reset" command), so
+    /// ChatView shouldn't also append it as a normal outgoing bubble.
+    private func handleBeforeSend(_ text: String) -> Bool {
+        guard text.caseInsensitiveCompare(resetCommand) == .orderedSame else { return false }
+        sequencer.reset()
+        timeline = []
+        hasStarted = false
+        return true
+    }
 
-        if !hasStarted {
-            hasStarted = true
-            sequencer.start()
-        }
-        return false
+    /// Starts the sequence right after the performer's first real message has been
+    /// appended, so the scripted reply appears after it — with the normal "sending…"
+    /// status first, same as every other step.
+    private func handleDidSend(_ text: String) {
+        guard !hasStarted else { return }
+        hasStarted = true
+        sequencer.start(skipFirstSendingPhase: false)
     }
 }
