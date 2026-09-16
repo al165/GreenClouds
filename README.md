@@ -354,6 +354,11 @@ the default cosmetic behavior described above.
 - Once the last script step's `postDelay` elapses with nothing left to advance
   to, the contact's status in the header switches from "online" to "offline" —
   the visible sign that the sequence (and the performance) has ended.
+- When the compose bar's text field is empty it shows a mic button instead of
+  the send arrow: hold it to record a voice message, release to send it (drag
+  left past the cancel threshold before releasing to discard it instead). Sent
+  voice messages appear as bubbles just like scripted ones — tap to play,
+  tap again to replay from the start.
 
 ## Note on WhatsApp branding
 

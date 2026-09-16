@@ -10,10 +10,17 @@ struct RevealedScriptStep: Identifiable {
     var id: UUID { step.id }
 }
 
-/// A message the audience member typed and sent themselves.
+/// What a self-sent message actually shows.
+enum SentMessageContent {
+    case text(String)
+    /// A voice message recorded on-device; `url` points at a temp file.
+    case voice(url: URL, duration: TimeInterval)
+}
+
+/// A message the audience member/performer typed or recorded and sent themselves.
 struct SentMessage: Identifiable {
     let id = UUID()
-    let text: String
+    let content: SentMessageContent
     let sentAt: Date = Date()
 }
 

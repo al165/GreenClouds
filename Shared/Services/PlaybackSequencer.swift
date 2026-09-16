@@ -107,8 +107,17 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     /// or scheduling the next advance.
     func toggleReplay(for step: ScriptStep) {
         guard case .voice(let audioFileName) = step.kind else { return }
+        guard let url = Bundle.main.url(forResource: audioFileName, withExtension: "m4a") else {
+            assertionFailure("Missing audio file: \(audioFileName).m4a — add it to Resources/Audio")
+            return
+        }
+        toggleReplay(id: step.id, url: url)
+    }
 
-        if replayingStepID == step.id, let replayPlayer {
+    /// Plays/pauses a user-recorded voice message (one someone sent themselves, from
+    /// a file on disk) — same independent replay mechanism as the overload above.
+    func toggleReplay(id: UUID, url: URL) {
+        if replayingStepID == id, let replayPlayer {
             if replayPlayer.isPlaying {
                 replayPlayer.pause()
                 isReplayPaused = true
@@ -119,11 +128,6 @@ final class PlaybackSequencer: NSObject, ObservableObject {
                 isReplayPaused = false
                 startReplayProgressTimer()
             }
-            return
-        }
-
-        guard let url = Bundle.main.url(forResource: audioFileName, withExtension: "m4a") else {
-            assertionFailure("Missing audio file: \(audioFileName).m4a — add it to Resources/Audio")
             return
         }
 
@@ -140,13 +144,13 @@ final class PlaybackSequencer: NSObject, ObservableObject {
             newPlayer.delegate = self
             newPlayer.prepareToPlay()
             replayPlayer = newPlayer
-            replayingStepID = step.id
+            replayingStepID = id
             replayCurrentTime = 0
             newPlayer.play()
             isReplayPaused = false
             startReplayProgressTimer()
         } catch {
-            assertionFailure("Failed to replay voice message \(audioFileName): \(error)")
+            assertionFailure("Failed to play voice message at \(url): \(error)")
         }
     }
 

@@ -11,11 +11,12 @@ struct ChatView: View {
     /// default "append as a sent bubble" behavior is skipped. Nil (the default)
     /// means every send just appends a bubble, as in GC Installation.
     var onBeforeSend: ((String) -> Bool)? = nil
-    /// Called after a message has been appended as a sent bubble (i.e. `onBeforeSend`
-    /// didn't intercept it) — for side effects that must happen only once the bubble
-    /// is actually in the timeline, like GC Performance starting the sequence on the
-    /// first send (so the scripted reply appears after it, not before).
-    var onDidSend: ((String) -> Void)? = nil
+    /// Called after any message (typed or voice) has been appended as a sent bubble
+    /// (i.e. `onBeforeSend` didn't intercept it) — for side effects that must happen
+    /// only once the bubble is actually in the timeline, like GC Performance starting
+    /// the sequence on the first send (so the scripted reply appears after it, not
+    /// before).
+    var onDidSend: (() -> Void)? = nil
 
     @State private var composeText = ""
     @FocusState private var isComposeFocused: Bool
@@ -52,7 +53,7 @@ struct ChatView: View {
                     }
                 }
 
-                ComposeBar(text: $composeText, isFocused: $isComposeFocused, onSend: sendMessage)
+                ComposeBar(text: $composeText, isFocused: $isComposeFocused, onSend: sendMessage, onSendVoice: sendVoiceMessage)
             }
 
             if let fullScreenImage {
@@ -77,7 +78,8 @@ struct ChatView: View {
                 let isLive = sequencer.currentlyPlayingStepID == revealed.id
                 let isReplaying = sequencer.replayingStepID == revealed.id
                 VoiceMessageBubble(
-                    step: revealed.step,
+                    id: revealed.id,
+                    isFromContact: revealed.step.isFromContact,
                     isPlaying: isLive ? !sequencer.isPaused : (isReplaying && !sequencer.isReplayPaused),
                     currentTime: isLive ? sequencer.currentTime : (isReplaying ? sequencer.replayCurrentTime : revealed.duration),
                     duration: revealed.duration,
@@ -97,7 +99,22 @@ struct ChatView: View {
                 )
             }
         case .sent(let message):
-            MessageBubble(text: message.text, isFromContact: false, sentAt: message.sentAt)
+            switch message.content {
+            case .text(let text):
+                MessageBubble(text: text, isFromContact: false, sentAt: message.sentAt)
+            case .voice(let url, let duration):
+                let isReplaying = sequencer.replayingStepID == message.id
+                VoiceMessageBubble(
+                    id: message.id,
+                    isFromContact: false,
+                    isPlaying: isReplaying && !sequencer.isReplayPaused,
+                    currentTime: isReplaying ? sequencer.replayCurrentTime : duration,
+                    duration: duration,
+                    sentAt: message.sentAt,
+                    onToggle: { sequencer.toggleReplay(id: message.id, url: url) },
+                    onSkipToEnd: nil
+                )
+            }
         }
     }
 
@@ -109,8 +126,14 @@ struct ChatView: View {
 
         if onBeforeSend?(trimmed) == true { return }
 
-        timeline.append(.sent(SentMessage(text: trimmed)))
+        timeline.append(.sent(SentMessage(content: .text(trimmed))))
         SoundEffectPlayer.shared.play(.messageSent)
-        onDidSend?(trimmed)
+        onDidSend?()
+    }
+
+    private func sendVoiceMessage(url: URL, duration: TimeInterval) {
+        timeline.append(.sent(SentMessage(content: .voice(url: url, duration: duration))))
+        SoundEffectPlayer.shared.play(.messageSent)
+        onDidSend?()
     }
 }

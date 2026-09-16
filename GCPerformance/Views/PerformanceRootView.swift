@@ -34,10 +34,10 @@ struct PerformanceRootView: View {
         return true
     }
 
-    /// Starts the sequence right after the performer's first real message has been
-    /// appended, so the scripted reply appears after it — with the normal "sending…"
-    /// status first, same as every other step.
-    private func handleDidSend(_ text: String) {
+    /// Starts the sequence right after the performer's first real message (typed or
+    /// voice) has been appended, so the scripted reply appears after it — with the
+    /// normal "sending…" status first, same as every other step.
+    private func handleDidSend() {
         guard !hasStarted else { return }
         hasStarted = true
         sequencer.start(skipFirstSendingPhase: false)

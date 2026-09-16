@@ -5,7 +5,8 @@ import SwiftUI
 /// (in-sequence) step plays/pauses normally, and an already-completed one can be
 /// replayed from the start, independent of the sequence's own progression.
 struct VoiceMessageBubble: View {
-    let step: ScriptStep
+    let id: UUID
+    let isFromContact: Bool
     /// True while this bubble's audio is actually producing sound right now (live or replay).
     let isPlaying: Bool
     let currentTime: TimeInterval
@@ -27,7 +28,7 @@ struct VoiceMessageBubble: View {
 
     var body: some View {
         HStack {
-            if step.isFromContact {
+            if isFromContact {
                 bubble
                 Spacer(minLength: 40)
             } else {
@@ -53,7 +54,7 @@ struct VoiceMessageBubble: View {
                 .buttonStyle(.plain)
                 .disabled(onToggle == nil)
 
-                WaveformView(id: step.id, progress: progress)
+                WaveformView(id: id, progress: progress)
                     .frame(maxWidth: .infinity)
                     .frame(height: 24)
                     .contentShape(Rectangle())
@@ -72,7 +73,7 @@ struct VoiceMessageBubble: View {
         }
         .padding(10)
         .frame(width: UIScreen.main.bounds.width * 0.8)
-        .background(step.isFromContact ? Color.white : Color(red: 0.86, green: 0.98, blue: 0.78))
+        .background(isFromContact ? Color.white : Color(red: 0.86, green: 0.98, blue: 0.78))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
