@@ -9,6 +9,8 @@ struct ImageMessageBubble: View {
     let caption: String?
     let isFromContact: Bool
     let sentAt: Date
+    /// Called when the photo itself is tapped, to show it full-screen.
+    var onTap: (() -> Void)? = nil
 
     private var bubbleWidth: CGFloat { UIScreen.main.bounds.width * 0.8 }
 
@@ -31,6 +33,8 @@ struct ImageMessageBubble: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: bubbleWidth - 8)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .contentShape(Rectangle())
+                .onTapGesture { onTap?() }
 
             if let caption {
                 Text(caption)

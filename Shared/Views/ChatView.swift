@@ -10,6 +10,7 @@ struct ChatView: View {
 
     @State private var composeText = ""
     @FocusState private var isComposeFocused: Bool
+    @State private var fullScreenImage: (imageName: String, caption: String?)?
 
     //private let backgroundColor = Color(red: 0.9, green: 0.94, blue: 0.9)
     //private let backgroundColor = Color(red: 0.91, green: 0.88, blue: 0.83)
@@ -44,6 +45,15 @@ struct ChatView: View {
 
                 ComposeBar(text: $composeText, isFocused: $isComposeFocused, onSend: sendMessage)
             }
+
+            if let fullScreenImage {
+                FullScreenImageView(
+                    imageName: fullScreenImage.imageName,
+                    caption: fullScreenImage.caption,
+                    onBack: { withAnimation { self.fullScreenImage = nil } }
+                )
+                .transition(.opacity)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture { isComposeFocused = false }
@@ -73,7 +83,8 @@ struct ChatView: View {
                     imageName: imageName,
                     caption: caption,
                     isFromContact: revealed.step.isFromContact,
-                    sentAt: revealed.sentAt
+                    sentAt: revealed.sentAt,
+                    onTap: { withAnimation { fullScreenImage = (imageName, caption) } }
                 )
             }
         case .sent(let message):
