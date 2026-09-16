@@ -293,9 +293,9 @@ GCPerformance/                 # Everything specific to the GC Performance app
    message received" notification banner appears on the lock screen.
 3. Tapping the notification calls `sequencer.start()` and switches to `ChatView`
    — the first voice message bubble is already sitting there, loaded and ready
-   to tap-play (no "Sending…" phase for that one, since the notification already
-   represented it arriving). Every message after the first still goes through
-   the normal "Sending voice message…" phase.
+   to tap-play (no status-bubble phase for that one, since the notification
+   already represented it arriving). Every message after the first still goes
+   through the normal status-bubble phase.
 4. Phone put down (whether still on the lock screen or mid-conversation) →
    after `putDownResetDelay`, the sequencer resets and the app switches back to
    the lock screen, ready for the next audience member.
@@ -338,9 +338,10 @@ the default cosmetic behavior described above.
 
 ## Chat behavior (both apps)
 
-- Each step (other than the very first, for GC Installation) shows a pulsing
-  **"Sending voice message…"** status (`sendingDuration` in
-  `PlaybackSequencer.swift`, default 2s) before the actual bubble appears.
+- Each step (other than the very first, for GC Installation) shows a transient
+  **status bubble** (`sendingDuration` in `PlaybackSequencer.swift`, default 2s)
+  before the actual bubble appears — animated typing dots for a text step, a mic
+  icon for a voice step, a photo icon for an image step (`StatusBubble.swift`).
 - Voice messages **do not autoplay** — the bubble appears paused/ready, and
   someone must tap the play circle to start it. Tapping again pauses/resumes.
   Once a voice message has finished playing, tapping it again replays it from

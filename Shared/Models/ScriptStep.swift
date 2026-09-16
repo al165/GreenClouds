@@ -8,15 +8,6 @@ enum ScriptStepKind {
     case text(String)
     /// A photo bubble. `imageName` must exist in Assets.xcassets; `caption` is optional.
     case image(imageName: String, caption: String? = nil)
-
-    /// Shown in place of "online" in the chat header while this step is being "sent".
-    var activityText: String {
-        switch self {
-        case .voice: return "recording audio…"
-        case .text: return "typing…"
-        case .image: return "sending photo…"
-        }
-    }
 }
 
 /// One step in the scripted message sequence.

@@ -33,7 +33,7 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 // Set avatarImageName to an Assets.xcassets image name (same convention as
                 // LockScreenBackground/photo_01) to show a photo instead of the placeholder icon.
-                ChatHeaderView(activityText: sequencer.preparingStep?.kind.activityText, isFinished: sequencer.isFinished, avatarImageName: "Avatar")
+                ChatHeaderView(isFinished: sequencer.isFinished, avatarImageName: "Avatar")
                     .ignoresSafeArea(edges: .top)
 
                 ScrollViewReader { proxy in
@@ -43,6 +43,10 @@ struct ChatView: View {
                                 row(for: item)
                                     .id(item.id)
                             }
+                            if let preparingStep = sequencer.preparingStep {
+                                StatusBubble(kind: preparingStep.kind, isFromContact: preparingStep.isFromContact)
+                                    .id("statusBubble")
+                            }
                         }
                         .padding(.horizontal, 8)
                         .padding(.top, 8)
@@ -50,6 +54,10 @@ struct ChatView: View {
                     .onChange(of: timeline.count) { _ in
                         guard let lastID = timeline.last?.id else { return }
                         withAnimation { proxy.scrollTo(lastID, anchor: .bottom) }
+                    }
+                    .onChange(of: sequencer.preparingStep?.id) { newValue in
+                        guard newValue != nil else { return }
+                        withAnimation { proxy.scrollTo("statusBubble", anchor: .bottom) }
                     }
                 }
 

@@ -3,8 +3,6 @@ import SwiftUI
 /// Static header bar styled like a WhatsApp conversation header.
 /// Intentionally non-interactive — there is nothing behind the chevron/avatar to navigate to.
 struct ChatHeaderView: View {
-    /// Non-nil while a step is being "sent" — replaces "online" with e.g. "typing…", in blue.
-    var activityText: String?
     /// True once the scripted sequence has fully played out — shows "offline" instead
     /// of "online" to signal the performance has ended.
     var isFinished: Bool = false
@@ -21,8 +19,8 @@ struct ChatHeaderView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Green Clouds")
                     .font(.system(size: 17, weight: .semibold))
-                Text(activityText ?? (isFinished ? "offline" : "online"))
-                    .foregroundColor(activityText != nil ? .blue : .black.opacity(0.8))
+                Text(isFinished ? "offline" : "online")
+                    .foregroundColor(.black.opacity(0.8))
                     .font(.caption2)
             }
 
