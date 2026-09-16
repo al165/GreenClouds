@@ -1,0 +1,24 @@
+# Media files (audio + images) — never tracked, wherever they appear in the
+# project (Resources/Audio, Assets.xcassets imagesets, etc). These are
+# performance-specific assets (voice recordings, photos) supplied locally on
+# each machine instead. See README.md "Media files are not tracked in git".
+*.m4a
+*.mp3
+*.wav
+*.caf
+*.aiff
+*.png
+*.jpg
+*.jpeg
+*.heic
+*.gif
+
+# Xcode / build products
+*.xcodeproj/
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store

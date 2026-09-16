@@ -1,0 +1,32 @@
+name: GreenClouds
+options:
+  bundleIdPrefix: com.niritpaled
+  deploymentTarget:
+    iOS: "16.0"
+configs:
+  Debug: debug
+  Release: release
+targets:
+  GCInstallation:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: GCInstallation
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_NAME: "GC Installation"
+        PRODUCT_BUNDLE_IDENTIFIER: com.niritpaled.GCInstallation
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: GCInstallation/Info.plist
+
+  # When GC Performance is ready, add a second target here following the same
+  # pattern: `sources: [Shared, GCPerformance]`, its own PRODUCT_NAME/bundle id/
+  # INFOPLIST_FILE, and a GCPerformance/ folder (App entry point, Info.plist,
+  # Assets.xcassets, Resources/Audio, Models/Script.swift) mirroring GCInstallation/.
