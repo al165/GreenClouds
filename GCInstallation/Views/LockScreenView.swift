@@ -55,7 +55,7 @@ struct LockScreenView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        Text("WhatsUp")
+                        Text("WhatsApp")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.primary)
                         Spacer()

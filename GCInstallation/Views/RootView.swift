@@ -15,9 +15,9 @@ struct RootView: View {
 
     /// How long the phone must stay flat before everything resets back to the lock
     /// screen — a brief put-down (e.g. adjusting grip) shouldn't restart the piece.
-    private let putDownResetDelay: TimeInterval = 2.5
+    private let putDownResetDelay: TimeInterval = 15
     /// Delay after pickup before the notification "arrives" on the lock screen.
-    private let notificationDelay: TimeInterval = 1.2
+    private let notificationDelay: TimeInterval = 0.8
 
     var body: some View {
         ZStack {
