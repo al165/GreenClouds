@@ -93,7 +93,10 @@ struct ChatView: View {
                     duration: revealed.duration,
                     sentAt: revealed.sentAt,
                     onToggle: isLive ? sequencer.togglePlayPause : { sequencer.toggleReplay(for: revealed.step) },
-                    onSkipToEnd: isLive ? sequencer.skipToEnd : nil
+                    onSkipToEnd: isLive ? sequencer.skipToEnd : nil,
+                    onSeek: isLive
+                        ? { sequencer.seek(to: $0) }
+                        : { sequencer.seekReplay(for: revealed.step, to: $0) }
                 )
             case .text(let text):
                 MessageBubble(text: text, isFromContact: revealed.step.isFromContact, sentAt: revealed.sentAt)
@@ -120,7 +123,8 @@ struct ChatView: View {
                     duration: duration,
                     sentAt: message.sentAt,
                     onToggle: { sequencer.toggleReplay(id: message.id, url: url) },
-                    onSkipToEnd: nil
+                    onSkipToEnd: nil,
+                    onSeek: { sequencer.seekReplay(id: message.id, url: url, to: $0) }
                 )
             }
         }

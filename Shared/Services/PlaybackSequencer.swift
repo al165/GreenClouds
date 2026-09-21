@@ -1,14 +1,17 @@
 import Foundation
 import AVFoundation
 
-/// Drives the scripted sequence. Each step goes through two phases before advancing:
+/// Drives the scripted sequence. Each step goes through two phases before advancing
+/// (after waiting out its `preDelay`, if any):
 /// a brief "sending" phase (a transient status bubble, no audio loaded yet), then the
 /// voice bubble itself — loaded but *not* auto-playing; the audience member must tap
 /// it to start. Advancing to the next step only happens once that playback finishes
-/// naturally (plus its postDelay) — there's no way for the audience to skip ahead or
-/// go back. A put-down (reset()) at any point stops everything and clears back to the
-/// start. `skipToEnd()` is a rehearsal/dev-only escape hatch (see VoiceMessageBubble's
-/// secret long-press) so a run-through doesn't require sitting through every message.
+/// naturally (plus its postDelay) — there's no way for the audience to skip ahead to
+/// the next message or go back to an earlier step, though they can scrub within a
+/// voice message by dragging its waveform (`seek`/`seekReplay`). A put-down (reset())
+/// at any point stops everything and clears back to the start. `skipToEnd()` is a
+/// rehearsal/dev-only escape hatch (see VoiceMessageBubble's secret long-press) so a
+/// run-through doesn't require sitting through every message.
 final class PlaybackSequencer: NSObject, ObservableObject {
     @Published private(set) var currentlyPlayingStepID: UUID?
     @Published private(set) var isPaused = false
@@ -55,7 +58,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
         isFinished = false
         currentIndex = 0
         if skipFirstSendingPhase {
-            loadCurrentStep()
+            afterDelay(Script.steps.first?.preDelay ?? 0) { [weak self] in self?.loadCurrentStep() }
         } else {
             prepareNextStep()
         }
@@ -106,11 +109,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     /// tap. Fully independent of the live sequence step — it never affects `currentIndex`
     /// or scheduling the next advance.
     func toggleReplay(for step: ScriptStep) {
-        guard case .voice(let audioFileName) = step.kind else { return }
-        guard let url = Bundle.main.url(forResource: audioFileName, withExtension: "m4a") else {
-            assertionFailure("Missing audio file: \(audioFileName).m4a — add it to Resources/Audio")
-            return
-        }
+        guard let url = replayURL(for: step) else { return }
         toggleReplay(id: step.id, url: url)
     }
 
@@ -133,25 +132,80 @@ final class PlaybackSequencer: NSObject, ObservableObject {
 
         do {
             pauseLiveIfPlaying()
-            stopReplayProgressTimer()
-            replayPlayer?.stop()
-
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
-            try session.setActive(true)
-
-            let newPlayer = try AVAudioPlayer(contentsOf: url)
-            newPlayer.delegate = self
-            newPlayer.prepareToPlay()
-            replayPlayer = newPlayer
-            replayingStepID = id
-            replayCurrentTime = 0
+            let newPlayer = try loadReplayPlayer(id: id, url: url)
             newPlayer.play()
             isReplayPaused = false
             startReplayProgressTimer()
         } catch {
             assertionFailure("Failed to play voice message at \(url): \(error)")
         }
+    }
+
+    /// Moves the live voice message's playhead to `time`, leaving it playing or paused
+    /// as it was. Driven by dragging the waveform.
+    func seek(to time: TimeInterval) {
+        guard let player, isRunning else { return }
+        let clamped = clampedSeekTime(time, in: player)
+        player.currentTime = clamped
+        currentTime = clamped
+    }
+
+    /// Moves a completed voice message's replay playhead to `time`. If it isn't the
+    /// message currently loaded for replay, it's loaded paused first (so the next tap
+    /// on play starts from the sought position).
+    func seekReplay(for step: ScriptStep, to time: TimeInterval) {
+        guard let url = replayURL(for: step) else { return }
+        seekReplay(id: step.id, url: url, to: time)
+    }
+
+    func seekReplay(id: UUID, url: URL, to time: TimeInterval) {
+        do {
+            let target: AVAudioPlayer
+            if replayingStepID == id, let existing = replayPlayer {
+                target = existing
+            } else {
+                target = try loadReplayPlayer(id: id, url: url)
+            }
+            let clamped = clampedSeekTime(time, in: target)
+            target.currentTime = clamped
+            replayCurrentTime = clamped
+        } catch {
+            assertionFailure("Failed to load voice message at \(url): \(error)")
+        }
+    }
+
+    private func replayURL(for step: ScriptStep) -> URL? {
+        guard case .voice(let audioFileName) = step.kind else { return nil }
+        guard let url = Bundle.main.url(forResource: audioFileName, withExtension: "m4a") else {
+            assertionFailure("Missing audio file: \(audioFileName).m4a — add it to Resources/Audio")
+            return nil
+        }
+        return url
+    }
+
+    /// Replaces the replay player with a fresh, paused one for `id`.
+    private func loadReplayPlayer(id: UUID, url: URL) throws -> AVAudioPlayer {
+        stopReplayProgressTimer()
+        replayPlayer?.stop()
+
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playback, mode: .default)
+        try session.setActive(true)
+
+        let newPlayer = try AVAudioPlayer(contentsOf: url)
+        newPlayer.delegate = self
+        newPlayer.prepareToPlay()
+        replayPlayer = newPlayer
+        replayingStepID = id
+        replayCurrentTime = 0
+        isReplayPaused = true
+        return newPlayer
+    }
+
+    /// Stops just short of the very end, so a sought-to-the-end message still finishes
+    /// naturally (and fires the delegate) rather than sitting at its last frame.
+    private func clampedSeekTime(_ time: TimeInterval, in player: AVAudioPlayer) -> TimeInterval {
+        min(max(time, 0), max(player.duration - 0.05, 0))
     }
 
     private func pauseLiveIfPlaying() {
@@ -191,6 +245,10 @@ final class PlaybackSequencer: NSObject, ObservableObject {
         }
 
         let step = Script.steps[currentIndex]
+        afterDelay(step.preDelay) { [weak self] in self?.showSendingStatus(for: step) }
+    }
+
+    private func showSendingStatus(for step: ScriptStep) {
         preparingStep = step
 
         let workItem = DispatchWorkItem { [weak self] in
@@ -200,6 +258,21 @@ final class PlaybackSequencer: NSObject, ObservableObject {
         }
         pendingSend = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + sendingDuration, execute: workItem)
+    }
+
+    /// Runs `action` after `delay` seconds — immediately, on the current call stack,
+    /// when there's no delay. Cancelled by `reset()` via `pendingSend`.
+    private func afterDelay(_ delay: TimeInterval, perform action: @escaping () -> Void) {
+        guard delay > 0 else {
+            action()
+            return
+        }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, self.isRunning else { return }
+            action()
+        }
+        pendingSend = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
     private func loadCurrentStep() {

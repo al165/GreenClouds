@@ -3,7 +3,8 @@ import SwiftUI
 /// WhatsApp-style voice note bubble: tappable play/pause, waveform that fills to show
 /// progress, and a duration label. Any revealed voice bubble can be tapped — the live
 /// (in-sequence) step plays/pauses normally, and an already-completed one can be
-/// replayed from the start, independent of the sequence's own progression.
+/// replayed from the start, independent of the sequence's own progression. Dragging
+/// across the waveform scrubs to that point in the message.
 struct VoiceMessageBubble: View {
     let id: UUID
     let isFromContact: Bool
@@ -16,10 +17,20 @@ struct VoiceMessageBubble: View {
     /// Dev-only: long-pressing the waveform skips to the end of the message.
     /// Only wired up for the live, in-sequence step.
     let onSkipToEnd: (() -> Void)?
+    /// Called once, when a drag across the waveform ends, with the time to seek to.
+    let onSeek: ((TimeInterval) -> Void)?
+
+    /// Non-nil while the waveform is being dragged — the bar fill and time label follow
+    /// the finger rather than the audio, and the seek is committed when the drag ends.
+    @State private var scrubProgress: Double?
 
     private var progress: Double {
         guard duration > 0 else { return isPlaying ? 0 : 1 }
         return min(max(currentTime / duration, 0), 1)
+    }
+
+    private var displayedProgress: Double {
+        scrubProgress ?? progress
     }
 
     private var showsPlayIcon: Bool {
@@ -54,11 +65,13 @@ struct VoiceMessageBubble: View {
                 .buttonStyle(.plain)
                 .disabled(onToggle == nil)
 
-                WaveformView(id: id, progress: progress)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 24)
-                    .contentShape(Rectangle())
-                    .onLongPressGesture(minimumDuration: 0.6) { onSkipToEnd?() }
+                GeometryReader { geometry in
+                    WaveformView(id: id, progress: displayedProgress)
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(minimumDuration: 0.6) { onSkipToEnd?() }
+                        .simultaneousGesture(scrubGesture(width: geometry.size.width))
+                }
+                .frame(height: 24)
 
                 Text(timeLabel)
                     .font(.caption2)
@@ -77,8 +90,27 @@ struct VoiceMessageBubble: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
+    private func scrubGesture(width: CGFloat) -> some Gesture {
+        func fraction(at x: CGFloat) -> Double {
+            min(max(Double(x / width), 0), 1)
+        }
+        let canSeek = onSeek != nil && duration > 0 && width > 0
+
+        return DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard canSeek else { return }
+                scrubProgress = fraction(at: value.location.x)
+            }
+            .onEnded { value in
+                scrubProgress = nil
+                guard canSeek else { return }
+                onSeek?(fraction(at: value.location.x) * duration)
+            }
+    }
+
     private var timeLabel: String {
-        let seconds = max(0, Int(currentTime.rounded()))
+        let displayedTime = scrubProgress.map { $0 * duration } ?? currentTime
+        let seconds = max(0, Int(displayedTime.rounded()))
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 }

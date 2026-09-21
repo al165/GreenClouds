@@ -39,7 +39,7 @@ supply it locally on each machine, per app (`GCInstallation/` and/or
 
 - **Voice messages**: drop `.m4a` files into `<App>/Resources/Audio/` (see
   "Replacing the placeholder audio" below).
-- **Notification/UI sounds**: `alert.mp3`, `message_received.wav`,
+- **Notification/UI sounds**: `alert.m4a`, `message_received.wav`,
   `message_sent.wav` also go in `<App>/Resources/Audio/` — both apps need their
   own copies.
 - **Images**: the app icon (`<App>/Assets.xcassets/AppIcon.appiconset/`), avatar
@@ -182,10 +182,27 @@ To use real voice messages, for either app:
 1. Drop your `.m4a` recordings into `<App>/Resources/Audio/`, named to match (or
    update the names in `<App>/Models/Script.swift`).
 2. Edit `<App>/Models/Script.swift` to add/remove/reorder steps, set which side
-   each bubble appears on (`isFromContact`), and the pause after each message
-   (`postDelay`).
+   each bubble appears on (`isFromContact`), the pause before each message
+   (`preDelay`, default 0 — on the first step it's the wait between the
+   performance starting and the first message arriving) and the pause after
+   each message (`postDelay`).
 3. Re-run `xcodegen generate` if you added new files (XcodeGen needs to re-scan
    the folder), then rebuild.
+
+### Converting a folder of mp3s to m4a
+
+The apps only load voice messages as `.m4a` (AAC), and `Script.swift` refers to
+them by bare file name with no extension (e.g. `"1_taking_V2"`). To batch-convert
+a folder of mp3s, `cd` into it and run (needs ffmpeg — `brew install ffmpeg` on a
+Mac):
+
+```
+for f in *.mp3; do ffmpeg -nostdin -i "$f" -vn -map_metadata 0 -c:a aac -b:a 256k -movflags +faststart "${f%.mp3}.m4a"; done
+```
+
+Each `name.mp3` produces `name.m4a` alongside it (the mp3s are left untouched, so
+delete them afterwards or they'll also be bundled into the app). `-vn` drops any
+embedded cover art. Add `-y` to overwrite existing `.m4a` files without prompting.
 
 ## Replacing the placeholder app icon
 
@@ -346,7 +363,10 @@ the default cosmetic behavior described above.
   someone must tap the play circle to start it. Tapping again pauses/resumes.
   Once a voice message has finished playing, tapping it again replays it from
   the start, independent of the sequence itself. The waveform fills
-  left-to-right to show playback progress.
+  left-to-right to show playback progress, and dragging a finger across it
+  scrubs to that point in the message (the seek is applied on release; it
+  works on the current message and on completed ones, but never moves the
+  sequence to a different message).
 - The sequence only advances to the next step once the current one has actually
   been **played through to the end** (plus its `postDelay`) — if nobody presses
   play, it just waits there.
