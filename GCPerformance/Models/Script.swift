@@ -14,12 +14,12 @@ import Foundation
 
 enum Script {
     static let steps: [ScriptStep] = [
-        ScriptStep(kind: .voice(audioFileName: "1_taking_V2"), preDelay: 3, postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "2_with_intervals"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "3_with_intervals"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "4_with_intervals"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "5_mahmoud_voice_SFX_V2"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "6_voice_SFX_V2"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "7_voice_SFX_V2"), postDelay: 1.5),
+        ScriptStep(kind: .voice(audioFileName: "260619_1_taking_V2"), preDelay: 3),
+        ScriptStep(kind: .voice(audioFileName: "260621_2_voice_SFX_V3"), preDelay: 4),
+        ScriptStep(kind: .voice(audioFileName: "260621_3_voice_SFX_V3"), preDelay: 4),
+        ScriptStep(kind: .voice(audioFileName: "260621_4_voice_SFX_V3"), preDelay: 4),
+        ScriptStep(kind: .voice(audioFileName: "260621_5_voice_SFX_V3"), preDelay: 4),
+        ScriptStep(kind: .voice(audioFileName: "260619_6_voice_SFX_V2"), preDelay: 4),
+        ScriptStep(kind: .voice(audioFileName: "260619_7_voice_SFX_V2"), preDelay: 4),
     ]
 }
