@@ -34,14 +34,27 @@ struct StatusBubble: View {
         case .text:
             TypingDotsView()
         case .voice:
-            Image(systemName: "mic.fill")
-                .font(.system(size: 16))
-                .foregroundColor(.secondary)
+            PulsingIcon(systemName: "mic.fill")
         case .image:
-            Image(systemName: "photo.fill")
-                .font(.system(size: 16))
-                .foregroundColor(.secondary)
+            PulsingIcon(systemName: "photo.fill")
         }
+    }
+}
+
+/// An SF Symbol that gently pulses (a slight scale and fade) while it's on screen.
+private struct PulsingIcon: View {
+    let systemName: String
+
+    @State private var isPulsing = false
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 16))
+            .foregroundColor(.secondary)
+            .scaleEffect(isPulsing ? 1.12 : 0.95)
+            .opacity(isPulsing ? 1 : 0.55)
+            .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: isPulsing)
+            .onAppear { isPulsing = true }
     }
 }
 
