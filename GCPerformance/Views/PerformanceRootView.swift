@@ -36,10 +36,17 @@ struct PerformanceRootView: View {
 
     /// Starts the sequence right after the performer's first real message (typed or
     /// voice) has been appended, so the scripted reply appears after it — with the
-    /// normal "sending…" status first, same as every other step.
-    private func handleDidSend() {
+    /// normal "sending…" status first, same as every other step. If that first message
+    /// is a voice message, the sequence holds off until it's been played back to the
+    /// end (by a tap on its play button), and the first step's `preDelay` counts down
+    /// from then.
+    private func handleDidSend(_ message: SentMessage) {
         guard !hasStarted else { return }
         hasStarted = true
-        sequencer.start(skipFirstSendingPhase: false)
+        if case .voice = message.content {
+            sequencer.start(skipFirstSendingPhase: false, afterReplayOf: message.id)
+        } else {
+            sequencer.start(skipFirstSendingPhase: false)
+        }
     }
 }

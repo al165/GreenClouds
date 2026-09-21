@@ -343,7 +343,10 @@ rather than a prop pretending to be a stranger's phone:
    type, it just needs to be sent.
 2. That first send calls `sequencer.start()`, and the scripted sequence begins
    revealing bubbles from `GCPerformance/Models/Script.swift`, exactly as
-   described in "Chat behavior" below (tap-to-play voice notes, etc).
+   described in "Chat behavior" below (tap-to-play voice notes, etc). If that
+   first message is a **voice message**, the sequence instead waits until it's
+   been played back to the end (tap its play button); the first step's
+   `preDelay` counts down from then. Until it's played, nothing arrives.
 3. Sending the exact message **"reset"** (case-insensitive) at any point clears
    the whole chat and resets the sequencer back to the start, instead of being
    added as a bubble — ready for the performer to send a fresh first message

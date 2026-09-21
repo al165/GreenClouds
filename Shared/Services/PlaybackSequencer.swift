@@ -44,6 +44,10 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     private var replayPlayer: AVAudioPlayer?
     private var replayProgressTimer: Timer?
 
+    /// Set while a started sequence is holding off until a given replay has played to
+    /// the end — `begin` then runs the first step. Cleared by `reset()`.
+    private var awaitedReplay: (id: UUID, begin: () -> Void)?
+
     /// How long the "Sending voice message…" status shows before the bubble appears.
     private let sendingDuration: TimeInterval = 2.0
 
@@ -52,15 +56,30 @@ final class PlaybackSequencer: NSObject, ObservableObject {
     /// notification already represented it arriving. Pass `skipFirstSendingPhase:
     /// false` (GC Performance, started by the performer's own first sent message) to
     /// have the first step go through the normal "sending…" status like every other.
-    func start(skipFirstSendingPhase: Bool = true) {
+    ///
+    /// Pass `afterReplayOf` (the id of a voice message that's already in the chat) to
+    /// hold the first step back until that message has been replayed to the end — the
+    /// first step's `preDelay` then counts down from that moment. Until then the
+    /// sequence is running but has shown nothing.
+    func start(skipFirstSendingPhase: Bool = true, afterReplayOf messageID: UUID? = nil) {
         guard !isRunning else { return }
         isRunning = true
         isFinished = false
         currentIndex = 0
-        if skipFirstSendingPhase {
-            afterDelay(Script.steps.first?.preDelay ?? 0) { [weak self] in self?.loadCurrentStep() }
+
+        let beginFirstStep = { [weak self] in
+            guard let self else { return }
+            if skipFirstSendingPhase {
+                self.afterDelay(Script.steps.first?.preDelay ?? 0) { [weak self] in self?.loadCurrentStep() }
+            } else {
+                self.prepareNextStep()
+            }
+        }
+
+        if let messageID {
+            awaitedReplay = (messageID, beginFirstStep)
         } else {
-            prepareNextStep()
+            beginFirstStep()
         }
     }
 
@@ -72,6 +91,7 @@ final class PlaybackSequencer: NSObject, ObservableObject {
         pendingAdvance = nil
         pendingSend?.cancel()
         pendingSend = nil
+        awaitedReplay = nil
         preparingStep = nil
         stopProgressTimer()
         player?.stop()
@@ -376,6 +396,10 @@ extension PlaybackSequencer: AVAudioPlayerDelegate {
             replayCurrentTime = replayPlayer?.duration ?? replayCurrentTime
             isReplayPaused = true
             stopReplayProgressTimer()
+            if isRunning, let awaited = awaitedReplay, awaited.id == replayingStepID {
+                awaitedReplay = nil
+                awaited.begin()
+            }
             return
         }
 

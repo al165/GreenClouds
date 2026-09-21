@@ -15,8 +15,8 @@ struct ChatView: View {
     /// (i.e. `onBeforeSend` didn't intercept it) — for side effects that must happen
     /// only once the bubble is actually in the timeline, like GC Performance starting
     /// the sequence on the first send (so the scripted reply appears after it, not
-    /// before).
-    var onDidSend: (() -> Void)? = nil
+    /// before). Receives the message that was just appended.
+    var onDidSend: ((SentMessage) -> Void)? = nil
 
     @State private var composeText = ""
     @FocusState private var isComposeFocused: Bool
@@ -138,14 +138,16 @@ struct ChatView: View {
 
         if onBeforeSend?(trimmed) == true { return }
 
-        timeline.append(.sent(SentMessage(content: .text(trimmed))))
+        let message = SentMessage(content: .text(trimmed))
+        timeline.append(.sent(message))
         SoundEffectPlayer.shared.play(.messageSent)
-        onDidSend?()
+        onDidSend?(message)
     }
 
     private func sendVoiceMessage(url: URL, duration: TimeInterval) {
-        timeline.append(.sent(SentMessage(content: .voice(url: url, duration: duration))))
+        let message = SentMessage(content: .voice(url: url, duration: duration))
+        timeline.append(.sent(message))
         SoundEffectPlayer.shared.play(.messageSent)
-        onDidSend?()
+        onDidSend?(message)
     }
 }
