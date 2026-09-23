@@ -10,10 +10,14 @@ import Foundation
 ///     ScriptStep(kind: .image(imageName: "photo_01", caption: "from that night")),
 enum Script {
     static let steps: [ScriptStep] = [
-        ScriptStep(kind: .voice(audioFileName: "message_01"), postDelay: 1.5),
-        ScriptStep(kind: .text("look at this"), postDelay: 2),
-        ScriptStep(kind: .image(imageName: "photo_01", caption: "this is where I am!"), postDelay: 5),
-        ScriptStep(kind: .voice(audioFileName: "message_02"), postDelay: 1.5),
-        ScriptStep(kind: .voice(audioFileName: "message_03"), postDelay: 0),
+        ScriptStep(kind: .voice(audioFileName: "260619_1_taking_V2"), preDelay: 0),
+        ScriptStep(kind: .voice(audioFileName: "260621_2_voice_SFX_V3"), preDelay: 1),
+        ScriptStep(kind: .voice(audioFileName: "260621_3_voice_SFX_V3"), preDelay: 1),
+        ScriptStep(kind: .voice(audioFileName: "260621_4_voice_SFX_V3"), preDelay: 2),
+        ScriptStep(kind: .voice(audioFileName: "260621_5_voice_SFX_V3"), preDelay: 2),
+        ScriptStep(kind: .voice(audioFileName: "260619_6_voice_SFX_V2"), preDelay: 2),
+        ScriptStep(kind: .voice(audioFileName: "260621_7_voice_SFX_V3"), preDelay: 1, postDelay: 4),
+//        ScriptStep(kind: .text("look at this"), postDelay: 2),
+//        ScriptStep(kind: .image(imageName: "photo_01", caption: "this is where I am!"), postDelay: 5),
     ]
 }

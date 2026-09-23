@@ -42,7 +42,11 @@ struct RootView: View {
             // would have had a chance to mount and register this itself.
             sequencer.onStepRevealed = { step, duration in
                 timeline.append(.script(RevealedScriptStep(step: step, duration: duration)))
-                SoundEffectPlayer.shared.play(.messageReceived)
+                // The lock-screen notification already played the alert for the
+                // first message, so only later messages get the received sound.
+                if step.id != Script.steps.first?.id {
+                    SoundEffectPlayer.shared.play(.messageReceived)
+                }
             }
             motionManager.start()
         }

@@ -39,6 +39,9 @@ struct ChatView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 8) {
+                            if !timeline.isEmpty || sequencer.preparingStep != nil {
+                                DateChip(text: "Today")
+                            }
                             ForEach(timeline) { item in
                                 row(for: item)
                                     .id(item.id)
@@ -149,5 +152,23 @@ struct ChatView: View {
         timeline.append(.sent(message))
         SoundEffectPlayer.shared.play(.messageSent)
         onDidSend?(message)
+    }
+}
+
+/// Small centered date divider above the messages, like WhatsApp's "Today" chip.
+private struct DateChip: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.9))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .shadow(color: .black.opacity(0.06), radius: 1, y: 1)
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 4)
     }
 }
