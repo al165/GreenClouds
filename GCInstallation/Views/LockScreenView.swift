@@ -10,6 +10,9 @@ struct LockScreenView: View {
     @State private var now = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    /// Optional Assets.xcassets image name; falls back to a placeholder icon when nil.
+    var avatarImageName: String? = nil
+
     var body: some View {
         ZStack {
             Image("LockScreenBackground")
@@ -44,18 +47,19 @@ struct LockScreenView: View {
     private var notificationBanner: some View {
         Button(action: onNotificationTap) {
             HStack(alignment: .top, spacing: 10) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(red: 0.0, green: 0.5, blue: 0.44))
-                    .frame(width: 34, height: 34)
-                    .overlay(
-                        Image(systemName: "message.fill")
-                            .foregroundStyle(.white)
-                            .font(.system(size: 15))
-                    )
+                avatar
+                // RoundedRectangle(cornerRadius: 8)
+                //     .fill(Color(red: 0.0, green: 0.5, blue: 0.44))
+                //     .frame(width: 34, height: 34)
+                //     .overlay(
+                //         Image(systemName: "message.fill")
+                //             .foregroundStyle(.white)
+                //             .font(.system(size: 15))
+                //     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        Text("WhatsApp")
+                        Text("Green Clouds")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.primary)
                         Spacer()
@@ -85,5 +89,24 @@ struct LockScreenView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE d MMM"
         return formatter.string(from: now)
+    }
+
+    @ViewBuilder
+    private var avatar: some View {
+        if let avatarImageName {
+            Image(avatarImageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(Color.black.opacity(0.3))
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: "person.fill")
+                        .foregroundColor(.white)
+                )
+        }
     }
 }

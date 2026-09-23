@@ -25,7 +25,7 @@ struct RootView: View {
                 ChatView(sequencer: sequencer, timeline: $timeline)
                     .transition(.move(edge: .trailing))
             } else {
-                LockScreenView(showNotification: showNotification, onNotificationTap: unlock)
+                LockScreenView(showNotification: showNotification, onNotificationTap: unlock, avatarImageName: "Avatar")
                     .transition(.opacity)
             }
             #if targetEnvironment(simulator)
