@@ -15,9 +15,9 @@ struct RootView: View {
 
     /// How long the phone must stay flat before everything resets back to the lock
     /// screen — a brief put-down (e.g. adjusting grip) shouldn't restart the piece.
-    private let putDownResetDelay: TimeInterval = 15
+    private let putDownResetDelay: TimeInterval = 5
     /// Delay after pickup before the notification "arrives" on the lock screen.
-    private let notificationDelay: TimeInterval = 0.8
+    private let notificationDelay: TimeInterval = 1.2
 
     var body: some View {
         ZStack {
@@ -43,9 +43,8 @@ struct RootView: View {
             sequencer.onStepRevealed = { step, duration in
                 timeline.append(.script(RevealedScriptStep(step: step, duration: duration)))
                 // The lock-screen notification already played the alert for the
-                // first message, so only later messages get the received sound —
-                // and only voice messages, not text or photos.
-                if step.id != Script.steps.first?.id, case .voice = step.kind {
+                // first message, so only later messages get the received sound.
+                if step.id != Script.steps.first?.id {
                     SoundEffectPlayer.shared.play(.messageReceived)
                 }
             }

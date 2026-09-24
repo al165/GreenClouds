@@ -50,7 +50,8 @@ private final class GravityReader: ObservableObject {
             self.x = motion.gravity.x
             self.y = motion.gravity.y
             self.z = motion.gravity.z
-            self.state = abs(motion.gravity.z) <= 0.7 ? .pickedUp : .flat
+            self.state = abs(motion.gravity.z) < 1 - 0.7 && motion.gravity.y >= 0.7 ? .flat : .pickedUp
+            // self.state = abs(motion.gravity.z) <= 0.7 ? .pickedUp : .flat
         }
     }
 

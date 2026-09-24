@@ -38,7 +38,7 @@ final class MotionManager: ObservableObject {
         motionManager.deviceMotionUpdateInterval = updateInterval
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
             guard let self, let motion else { return }
-            self.process(gravityZ: motion.gravity.z)
+            self.process(gravityY: motion.gravity.y, gravityZ: motion.gravity.z)
         }
         #endif
     }
@@ -57,17 +57,26 @@ final class MotionManager: ObservableObject {
     }
     #endif
 
-    private func process(gravityZ: Double) {
+    private func process(gravityY:Double, gravityZ: Double) {
         let magnitude = abs(gravityZ)
 
+        // "flat" when its hanging upside down,
+        // - |gravity.z| ~= 0
+        // - gravity.y ~= 1
+
         let instantaneous: PhoneState?
-        if magnitude <= pickedUpThreshold {
-            instantaneous = .pickedUp
-        } else if magnitude >= flatThreshold {
+        if ( magnitude < 1 - flatThreshold && gravityY >= flatThreshold ){
             instantaneous = .flat
+        } else if ( magnitude >= 1 - pickedUpThreshold || gravityY < pickedUpThreshold ) {
+             instantaneous = .pickedUp
         } else {
             instantaneous = nil // inside the dead zone; ignore this sample
         }
+
+        // if magnitude <= pickedUpThreshold {
+        //     instantaneous = .pickedUp
+        // } else if magnitude >= flatThreshold {
+        //     instantaneous = .flat
 
         guard let instantaneous else { return }
 
