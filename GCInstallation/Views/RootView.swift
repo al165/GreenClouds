@@ -43,8 +43,9 @@ struct RootView: View {
             sequencer.onStepRevealed = { step, duration in
                 timeline.append(.script(RevealedScriptStep(step: step, duration: duration)))
                 // The lock-screen notification already played the alert for the
-                // first message, so only later messages get the received sound.
-                if step.id != Script.steps.first?.id {
+                // first message, so only later messages get the received sound —
+                // and only voice messages, not text or photos.
+                if step.id != Script.steps.first?.id, case .voice = step.kind {
                     SoundEffectPlayer.shared.play(.messageReceived)
                 }
             }

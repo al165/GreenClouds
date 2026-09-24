@@ -26,7 +26,7 @@ struct LockScreenView: View {
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.3), radius: 6)
                 Text(timeString)
-                    .font(.system(size: 96, weight: .semibold))
+                    .font(.system(size: 96, weight: .medium))
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.3), radius: 6)
 
@@ -64,11 +64,11 @@ struct LockScreenView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Text("now")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .light))
                             .foregroundStyle(.secondary)
                     }
-                    Text("New voice message received")
-                        .font(.system(size: 14))
+                    Text("New message received")
+                        .font(.system(size: 14, weight: .light))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
                 }

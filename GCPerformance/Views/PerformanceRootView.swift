@@ -19,7 +19,10 @@ struct PerformanceRootView: View {
             .onAppear {
                 sequencer.onStepRevealed = { step, duration in
                     timeline.append(.script(RevealedScriptStep(step: step, duration: duration)))
-                    SoundEffectPlayer.shared.play(.messageReceived)
+                    // Only voice messages get the received sound, not text or photos.
+                    if case .voice = step.kind {
+                        SoundEffectPlayer.shared.play(.messageReceived)
+                    }
                 }
             }
     }

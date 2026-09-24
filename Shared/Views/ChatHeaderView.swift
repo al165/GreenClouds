@@ -18,7 +18,7 @@ struct ChatHeaderView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Green Clouds")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 17, weight: .light))
                 Text(isFinished ? "offline" : "online")
                     .foregroundColor(.black.opacity(0.8))
                     .font(.caption2)
@@ -34,9 +34,12 @@ struct ChatHeaderView: View {
                 .rotationEffect(.degrees(90))
         }
         .padding(.horizontal, 12)
-        .padding(.top, 50)
+        .padding(.top, 4)
         .padding(.bottom, 10)
-        .background(.white)
+        // Only the background extends up behind the status bar; the header itself
+        // stays inside the safe area so the VStack below it (the message list)
+        // starts exactly at the header's bottom edge, with no dead strip between.
+        .background(Color.white.ignoresSafeArea(edges: .top))
     }
 
     @ViewBuilder

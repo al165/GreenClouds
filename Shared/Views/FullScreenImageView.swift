@@ -20,7 +20,7 @@ struct FullScreenImageView: View {
 
                 if let caption {
                     Text(caption)
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, weight: .light))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)

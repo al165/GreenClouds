@@ -38,7 +38,7 @@ struct ImageMessageBubble: View {
 
             if let caption {
                 Text(caption)
-                    .font(.system(size: 15))
+                    .font(.system(size: 15, weight: .light))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)

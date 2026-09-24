@@ -28,6 +28,7 @@ struct ComposeBar: View {
                     recordingIndicator
                 } else {
                     TextField("Message", text: $text, axis: .vertical)
+                        .font(.system(size: 17, weight: .light))
                         .lineLimit(1...4)
                         .focused(isFocused)
                         .submitLabel(.send)

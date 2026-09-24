@@ -7,8 +7,8 @@ struct MessageBubble: View {
     let isFromContact: Bool
     let sentAt: Date
 
-    private let font = UIFont.systemFont(ofSize: 16)
-    private let timeFont = UIFont.systemFont(ofSize: 10)
+    private let font = UIFont.systemFont(ofSize: 16, weight: .light)
+    private let timeFont = UIFont.systemFont(ofSize: 10, weight: .light)
     private let horizontalPadding: CGFloat = 12
     private let verticalPadding: CGFloat = 8
 

@@ -204,6 +204,57 @@ Each `name.mp3` produces `name.m4a` alongside it (the mp3s are left untouched, s
 delete them afterwards or they'll also be bundled into the app). `-vn` drops any
 embedded cover art. Add `-y` to overwrite existing `.m4a` files without prompting.
 
+## Converting a folder of images into imagesets
+
+Photo messages, avatars and backgrounds are loaded by imageset name (the folder
+name without `.imageset`), e.g. `office_park` for `office_park.imageset/`. To turn
+a folder of images (`.png`, `.jpg`, `.jpeg`, `.heic`, `.webp`, `.tif`/`.tiff`) into
+JPG imagesets in one go, `cd` into that folder, set `ASSETS` to the target app's
+asset catalog, and run (needs ImageMagick — `brew install imagemagick` on a
+Mac):
+
+```
+ASSETS=path/to/GCInstallation/Assets.xcassets
+find . -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.heic' -o -iname '*.webp' -o -iname '*.tif' -o -iname '*.tiff' \) | while read -r f; do
+  name=$(basename "${f%.*}")
+  dir="$ASSETS/$name.imageset"
+  mkdir -p "$dir"
+  magick "$f" -auto-orient -quality 90 "$dir/$name.jpg"
+  cat > "$dir/Contents.json" <<EOF
+{
+    "images": [
+        {
+            "filename": "$name.jpg",
+            "idiom": "universal",
+            "scale": "1x"
+        },
+        {
+            "idiom": "universal",
+            "scale": "2x"
+        },
+        {
+            "idiom": "universal",
+            "scale": "3x"
+        }
+    ],
+    "info": {
+        "author": "xcode",
+        "version": 1
+    }
+}
+EOF
+done
+```
+
+Each `name.png` (or other format) becomes `$ASSETS/name.imageset/name.jpg` plus a
+matching `Contents.json`; the originals are left untouched. The file name becomes
+the asset name, so name the source files as you'll reference them in
+`Script.swift` (avoid spaces). An existing imageset with the same name has its
+`Contents.json` overwritten, but any other image files already in it are kept, so
+delete those if you're replacing a PNG with the new JPG. `-quality 90` is the
+JPEG quality (0–100), and `-auto-orient` bakes in the rotation from phone photos'
+EXIF data so they don't appear sideways. Run `xcodegen generate` afterwards.
+
 ## Replacing the placeholder app icon
 
 `GCInstallation/Assets.xcassets/AppIcon.appiconset/icon-1024.png` (solid
