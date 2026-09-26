@@ -6,18 +6,24 @@ import SwiftUI
 struct RootView: View {
     @StateObject private var motionManager = MotionManager()
     @StateObject private var sequencer = PlaybackSequencer()
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isUnlocked = false
     @State private var showNotification = false
     @State private var timeline: [ChatItem] = []
     @State private var pendingResetWorkItem: DispatchWorkItem?
     @State private var pendingNotificationWorkItem: DispatchWorkItem?
+    @State private var backgroundedAt: Date?
 
     /// How long the phone must stay flat before everything resets back to the lock
     /// screen — a brief put-down (e.g. adjusting grip) shouldn't restart the piece.
     private let putDownResetDelay: TimeInterval = 5
     /// Delay after pickup before the notification "arrives" on the lock screen.
     private let notificationDelay: TimeInterval = 1.2
+    /// How long the app must have been in the background (e.g. screen turned off with
+    /// the power button) before returning to it resets everything. The app is
+    /// suspended while backgrounded, so this is checked on return rather than timed.
+    private let backgroundResetDelay: TimeInterval = 15
 
     var body: some View {
         ZStack {
@@ -64,6 +70,24 @@ struct RootView: View {
                 scheduleReset()
             }
         }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .background:
+                backgroundedAt = Date()
+            case .active:
+                guard let since = backgroundedAt else { return }
+                backgroundedAt = nil
+                guard Date().timeIntervalSince(since) >= backgroundResetDelay else { return }
+                resetToLockScreen()
+                // Motion state won't change if the phone is still being held, so
+                // re-trigger the pickup flow as if it had just been picked up.
+                if motionManager.state == .pickedUp {
+                    scheduleNotification()
+                }
+            default:
+                break
+            }
+        }
     }
 
     private func scheduleNotification() {
@@ -76,14 +100,20 @@ struct RootView: View {
     }
 
     private func scheduleReset() {
-        let workItem = DispatchWorkItem {
-            sequencer.reset()
-            showNotification = false
-            isUnlocked = false
-            timeline = []
-        }
+        let workItem = DispatchWorkItem { resetToLockScreen() }
         pendingResetWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + putDownResetDelay, execute: workItem)
+    }
+
+    private func resetToLockScreen() {
+        pendingResetWorkItem?.cancel()
+        pendingResetWorkItem = nil
+        pendingNotificationWorkItem?.cancel()
+        pendingNotificationWorkItem = nil
+        sequencer.reset()
+        showNotification = false
+        isUnlocked = false
+        timeline = []
     }
 
     private func unlock() {
