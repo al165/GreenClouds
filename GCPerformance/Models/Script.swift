@@ -15,11 +15,11 @@ import Foundation
 enum Script {
     static let steps: [ScriptStep] = [
         // ScriptStep(kind: .voice(audioFileName: "260619_1_taking_V2"), preDelay: 3),
-        ScriptStep(kind: .voice(audioFileName: "260624_2_voice_SFX_V4"), preDelay: 3),
-        ScriptStep(kind: .voice(audioFileName: "260624_3_voice_SFX_V4"), preDelay: 3),
-        ScriptStep(kind: .voice(audioFileName: "260621_4_voice_SFX_V3"), preDelay: 0),
+        ScriptStep(kind: .voice(audioFileName: "260624_2_voice_SFX_V4"), preDelay: 2),
+        ScriptStep(kind: .voice(audioFileName: "260625_3_voice_SFX_V6"), preDelay: 3),
+        ScriptStep(kind: .voice(audioFileName: "260621_4_voice_SFX_V3"), preDelay: 3),
         ScriptStep(kind: .voice(audioFileName: "260621_5_voice_SFX_V3"), preDelay: 3),
         ScriptStep(kind: .voice(audioFileName: "260619_6_voice_SFX_V2"), preDelay: 3),
-        ScriptStep(kind: .voice(audioFileName: "260624_7_voice_SFX_V4"), preDelay: 1),
+        ScriptStep(kind: .voice(audioFileName: "260625_7_voice_SFX_V5"), preDelay: 1),
     ]
 }

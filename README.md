@@ -2,7 +2,7 @@
 
 A single-screen iOS app that looks like a WhatsApp conversation and plays a scripted
 sequence of voice messages. The sequence starts when the phone is picked up
-(accelerometer/gyro) and resets when it's put back down. See
+(accelerometer/gyro) and resets when it's hung back up, upside down. See
 `/home/arran/.claude/plans/i-want-to-build-velvety-crown.md` for the full design
 plan.
 
@@ -10,8 +10,8 @@ This repo is a single XcodeGen project (`project.yml`) holding two apps as
 separate targets, sharing most of their code:
 
 - **GC Installation** (`GCInstallation/`) — a lock-screen prop: starts its scripted
-  message sequence when the phone is picked up, resets when it's put back down.
-  See "GC Installation: lock screen flow" below.
+  message sequence when the phone is picked up, resets when it's hung back up
+  upside down. See "GC Installation: lock screen flow" below.
 - **GC Performance** (`GCPerformance/`) — just the chat screen, no lock screen: it's
   the performer's own control surface. Sending any message starts the scripted
   sequence; sending exactly "reset" clears the chat and sequencer back to the
@@ -273,12 +273,38 @@ so this must be done on a real device.
 
 1. Temporarily change the root view in `GCInstallation/GCInstallationApp.swift`
    from `RootView()` to `CalibrationView()`.
-2. Run on your phone and watch the live `gravity.z` value while setting the phone
-   flat on a table vs picking it up in your hand at different angles/speeds.
+2. Run on your phone and watch the live `gravity.y` and `gravity.z` values while
+   hanging the phone upside down (top edge pointing at the floor, as it rests
+   between audience members) vs picking it up in your hand at different
+   angles/speeds.
 3. Adjust `pickedUpThreshold`, `flatThreshold`, and `requiredStableDuration` in
-   `GCInstallation/Services/MotionManager.swift` until the FLAT/PICKED UP
-   indicator feels reliable and doesn't flicker.
+   `GCInstallation/Services/MotionManager.swift` until switching between the two
+   feels reliable and doesn't flicker.
 4. Change the root view back to `RootView()`.
+
+The "put down" state is still called `flat` in the code, but it now means the
+phone is **hanging upside down**, not lying on a table:
+
+- **Put down (`flat`)**: `|gravity.z| < 1 - flatThreshold` (the screen faces
+  sideways, not up or down) **and** `gravity.y >= flatThreshold` (the top edge
+  points down). With the default `flatThreshold` of 0.85, that's
+  `|z| < 0.15` and `y >= 0.85`.
+- **Picked up**: `|gravity.z| >= 1 - pickedUpThreshold` (tilted towards face-up
+  or face-down) **or** `gravity.y < pickedUpThreshold` (no longer pointing
+  down). With the default `pickedUpThreshold` of 0.7, that's `|z| >= 0.3` or
+  `y < 0.7`.
+- Anything in between is a dead zone and is ignored, so the state doesn't
+  flicker at the boundary. The new state also has to hold for
+  `requiredStableDuration` (0.5s) before it counts.
+
+Held normally in portrait, `gravity.y` is close to -1, so a phone in someone's
+hand always reads as picked up. Lying flat on a table (`|z|` close to 1) also
+reads as picked up now.
+
+The FLAT/PICKED UP indicator in `CalibrationView` uses its own hardcoded copy of
+the rule, with 0.7 for both thresholds and no dead zone or debounce. It's a rough
+guide, not an exact preview of `MotionManager`: if you change the thresholds
+there, update line 53 of `CalibrationView.swift` to match.
 
 ## Scaling to the full run (5 phones, 2 weeks)
 
@@ -356,15 +382,17 @@ GCPerformance/                 # Everything specific to the GC Performance app
 `RootView` is GC Installation's actual root and owns both `MotionManager` and
 `PlaybackSequencer`, switching between `LockScreenView` and `ChatView`:
 
-1. Phone flat → plain lock screen (clock + background, no notification).
-2. Phone picked up → after `notificationDelay` (default 1.2s), a "New voice
-   message received" notification banner appears on the lock screen.
+1. Phone hanging upside down → plain lock screen (clock + background, no
+   notification).
+2. Phone picked up → after `notificationDelay` (default 1.2s), a "New message
+   received" notification banner appears on the lock screen.
 3. Tapping the notification calls `sequencer.start()` and switches to `ChatView`
-   — the first voice message bubble is already sitting there, loaded and ready
-   to tap-play (no status-bubble phase for that one, since the notification
-   already represented it arriving). Every message after the first still goes
-   through the normal status-bubble phase.
-4. Phone put down (whether still on the lock screen or mid-conversation) →
+   — the first message is already sitting there (no status-bubble phase or
+   received sound for that one, since the notification already represented it
+   arriving). Every message after the first still goes through the normal
+   status-bubble phase and plays the received sound.
+4. Phone hung back up upside down (whether still on the lock screen or
+   mid-conversation) →
    after `putDownResetDelay`, the sequencer resets and the app switches back to
    the lock screen, ready for the next audience member.
 
@@ -372,7 +400,7 @@ Replace the image in `GCInstallation/Assets.xcassets/LockScreenBackground.images
 with a real personalized photo before the performance — it's currently just a
 generated placeholder gradient.
 
-Putting the phone down doesn't reset instantly — there's a ~2.5s grace period
+Hanging the phone back up doesn't reset instantly — there's a 5s grace period
 (`putDownResetDelay` in `RootView.swift`) so a brief adjustment of grip doesn't
 restart the whole piece. If it's picked back up within that window, nothing
 resets and playback continues where it left off.
